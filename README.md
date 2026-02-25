@@ -1,13 +1,19 @@
 # Monte Carlo Bankroll Simulator
 
-Python simulation of bankroll trajectories using normal distribution (mu, sigma).
+Python-based Monte Carlo simulation tool to model bankroll variance using a normal distribution (mu, sigma).
 
-Features:
+## Features
+
 - Risk of ruin estimation
 - Average final bankroll (survivors)
 - Drawdown tracking
-- Cost threshold (no-credit model)
+- Cost threshold model (no-credit constraint)
+- Histogram of final bankroll distribution
 
-Next steps:
-- Histogram of final bankroll
-- Discrete payout model
+## Usage
+
+python montecarlo.py
+
+## Roadmap
+
+- Discrete payout model (realistic spin simulation)
