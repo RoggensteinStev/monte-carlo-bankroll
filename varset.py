@@ -26,6 +26,32 @@ def print_stats(stats):
         print("avg min br :", f"{avg_min_br_survived:.2f}")
         print("avg br :", f"{avg_br_survived:.2f}")
     print("survivors :", survivors)
+    print_histogram(stats["final_survived"])
+    print("************************************************")
+
+def print_histogram(values, bins=10):
+    if not values:
+        print("No survivors to display.")
+        return
+    min_value = min(values)
+    max_value = max(values)
+    if min_value == max_value:
+        print("Histogram of final bankrolls:")
+        print(f"{min_value:.2f}: {'#' * len(values)} ({len(values)})")
+        return
+    bin_size = (max_value - min_value) / bins
+    histogram = [0] * bins
+    for value in values:
+        if value == max_value:
+            histogram[-1] += 1
+        else:
+            index = int((value - min_value) / bin_size)
+            histogram[index] += 1
+    print("Histogram of final bankrolls:")
+    for i in range(bins):
+        lower_bound = min_value + i * bin_size
+        upper_bound = lower_bound + bin_size
+        print(f"{lower_bound:.2f} - {upper_bound:.2f}: {'#' * histogram[i]} ({histogram[i]})")
 
 def inputval() -> tuple[float, float, int, float, int, float]:
     valmu = (float)(input("Enter mu :")) 
@@ -71,6 +97,7 @@ def run_monte_carlo(mu, sigma, ngame, br_start, cost, nb_trajectorie) -> dict:
     sum_min_br = 0
     max_drawdown = 0
     sum_drawdown = 0
+    final_survived = []
     sum_drawdown_survived = 0
     for j in range(nb_trajectorie):
         broke, br_temp, min_br, drawdown = simulate_trajectory(mu, sigma, ngame, br_start, cost)
@@ -80,6 +107,7 @@ def run_monte_carlo(mu, sigma, ngame, br_start, cost, nb_trajectorie) -> dict:
             sum_br += br_temp
             sum_min_br += min_br
             sum_drawdown_survived += drawdown
+            final_survived.append(br_temp)
         if drawdown > max_drawdown:
             max_drawdown = drawdown
         sum_drawdown += drawdown
@@ -90,7 +118,8 @@ def run_monte_carlo(mu, sigma, ngame, br_start, cost, nb_trajectorie) -> dict:
     "sum_drawdown_survived": sum_drawdown_survived,
     "max_drawdown": max_drawdown,
     "nb_trajectorie": nb_trajectorie,
-    "sum_drawdown": sum_drawdown
+    "sum_drawdown": sum_drawdown,
+    "final_survived": final_survived
     }
 
 def main():
