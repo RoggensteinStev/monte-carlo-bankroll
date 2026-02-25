@@ -3,6 +3,14 @@ import sys
 
 def print_stats(stats):
 
+    """Print the results of the Monte Carlo simulation. 
+    Calculates and displays the average drawdown, average bankroll for survivors, 
+    and other relevant statistics. 
+    Args: stats (dict): A dictionary containing the results of the Monte Carlo simulation, 
+    including counts of broke trajectories, sums of final bankrolls, 
+    minimum bankrolls, drawdowns, and the number of trajectories. 
+    """
+
     avg_drawdown_all = stats["sum_drawdown"] / stats["nb_trajectorie"]
     survivors = stats["nb_trajectorie"] - stats["broke_count"]
     avg_brok_percent = 0
@@ -30,6 +38,15 @@ def print_stats(stats):
     print("************************************************")
 
 def print_histogram(values, bins=10):
+    
+    """
+    Print a histogram of the final bankrolls for the surviving trajectories.
+    Args:
+        values (list): A list of final bankrolls for the surviving trajectories.
+        bins (int, optional): The number of bins to use in the histogram. If None,
+        it will be calculated based on the number of values.
+    """
+
     if not values:
         print("No survivors to display.")
         return
@@ -54,6 +71,14 @@ def print_histogram(values, bins=10):
         print(f"{lower_bound:.2f} - {upper_bound:.2f}: {'#' * histogram[i]} ({histogram[i]})")
 
 def inputval() -> tuple[float, float, int, float, int, float]:
+    
+    """
+    Prompt the user for input values required for the Monte Carlo simulation.
+    Returns:
+            tuple: A tuple containing the input values in the following order:
+            (mu, sigma, ngame, br_start, nb_trajectorie, cost)
+    """
+
     valmu = (float)(input("Enter mu :")) 
     valuesigma = (float)(input("Enter sigma :"))
     ngame = (int)(input("Nb games :"))
@@ -72,6 +97,23 @@ def inputval() -> tuple[float, float, int, float, int, float]:
     return valmu, valuesigma, ngame, br_start, nb_trajectorie, cost
 
 def simulate_trajectory(mu, sigma, ngame, br_start, cost) -> tuple[bool, float, float, float]:
+    
+    """
+    Simulate a single trajectory of bankroll changes over a specified number of games.
+    Args:
+        mu (float): The mean of the normal distribution for bankroll changes.
+        sigma (float): The standard deviation of the normal distribution for bankroll changes.
+        ngame (int): The number of games to simulate in the trajectory.
+        br_start (float): The starting bankroll for the trajectory.
+        cost (float): The cost threshold below which the bankroll is considered broke.
+    Returns:
+        tuple: A tuple containing the following values:
+        - broke (bool): Whether the bankroll went broke (True if it fell below the cost).
+        - final_br (float): The final bankroll at the end of the trajectory.
+        - min_br (float): The minimum bankroll observed during the trajectory.
+        - drawdown (float): The maximum drawdown observed during the trajectory.
+    """
+
     br_temp = br_start
     min_br = br_start
     drawdown = 0
@@ -92,6 +134,30 @@ def simulate_trajectory(mu, sigma, ngame, br_start, cost) -> tuple[bool, float, 
 
 
 def run_monte_carlo(mu, sigma, ngame, br_start, cost, nb_trajectorie) -> dict:
+    
+    """
+    Run the Monte Carlo simulation for a specified number of trajectories.
+    Simulates multiple trajectories of bankroll changes and collects statistics on the outcomes,
+    including counts of broke trajectories, sums of final bankrolls, minimum bankrolls, drawdowns, and the number of trajectories.
+    Args:
+        mu (float): The mean of the normal distribution for bankroll changes.
+        sigma (float): The standard deviation of the normal distribution for bankroll changes.
+        ngame (int): The number of games to simulate in each trajectory.
+        br_start (float): The starting bankroll for each trajectory.
+        cost (float): The cost threshold below which the bankroll is considered broke.
+        nb_trajectorie (int): The number of trajectories to simulate.
+    Returns:
+        dict: A dictionary containing the results of the Monte Carlo simulation, including:
+        - "broke_count": The number of trajectories that went broke.
+        - "sum_br": The sum of final bankrolls for surviving trajectories.
+        - "sum_min_br": The sum of minimum bankrolls for surviving trajectories.
+        - "sum_drawdown_survived": The sum of drawdowns for surviving trajectories.
+        - "max_drawdown": The maximum drawdown observed across all trajectories.
+        - "nb_trajectorie": The total number of trajectories simulated.
+        - "sum_drawdown": The sum of drawdowns across all trajectories.
+        - "final_survived": A list of final bankrolls for surviving trajectories.
+    """
+
     broke_count = 0
     sum_br = 0
     sum_min_br = 0
@@ -123,6 +189,11 @@ def run_monte_carlo(mu, sigma, ngame, br_start, cost, nb_trajectorie) -> dict:
     }
 
 def main():
+
+    """ Main function to execute the Monte Carlo simulation. 
+    It prompts the user for input values, runs the simulation, and prints the results. 
+    """
+    
     mu, sigma, ngame, br_start, nb_trajectorie, cost = inputval()
     stats = run_monte_carlo(mu, sigma, ngame, br_start, cost, nb_trajectorie)
     print_stats(stats)
