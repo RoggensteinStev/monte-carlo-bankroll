@@ -1,6 +1,133 @@
 import random
 import sys
 
+class MonteCarloSimulator:
+    
+    """
+    A class to perform Monte Carlo simulations of bankroll changes over a series of games.
+    It includes methods for simulating trajectories, running the simulation, and printing results.
+    """
+
+    def __init__(self, cfg):
+        """Initialize the Monte Carlo Simulator with the given configuration.
+        Args:
+            cfg (dict): A dictionary containing the configuration parameters for the simulation, including:
+                - "mu": The mean change in bankroll per game.
+                - "sigma": The standard deviation of the change in bankroll per game.
+                - "ngame": The number of games to simulate in each trajectory.
+                - "br_start": The starting bankroll for each trajectory.
+                - "nb_trajectorie": The number of trajectories to simulate.
+                - "cost": The cost threshold for going broke.
+                - "seed": An optional seed for random number generation to ensure reproducibility.
+        """
+        self.cfg = cfg
+        if self.cfg["seed"] is not None:
+            random.seed(self.cfg["seed"])
+
+    def simulate_trajectory(self) -> tuple[bool, float, float, float]:
+           
+        """
+        Simulate a single trajectory of bankroll changes over a specified number of games.
+        Returns:
+            tuple: A tuple containing the following values:
+            - broke (bool): Whether the bankroll went broke (True if it fell below the cost).
+            - final_br (float): The final bankroll at the end of the trajectory.
+            - min_br (float): The minimum bankroll observed during the trajectory.
+            - drawdown (float): The maximum drawdown observed during the trajectory.
+        """
+
+        br_temp = self.cfg["br_start"]
+        min_br = self.cfg["br_start"]
+        drawdown = 0
+        peak = self.cfg["br_start"]
+        broke = False
+        for i in range(self.cfg["ngame"]): 
+            br_temp += random.normalvariate(self.cfg["mu"], self.cfg["sigma"]) 
+            if br_temp > peak: 
+                peak = br_temp
+            if peak - br_temp > drawdown:
+                drawdown = peak - br_temp
+            if br_temp < min_br: 
+                min_br = br_temp 
+            if br_temp < self.cfg["cost"]:
+                broke = True
+                break
+        return (broke, br_temp, min_br, drawdown)
+    
+    def run_monte_carlo(self) -> dict:
+        
+        """
+        Run the Monte Carlo simulation for a specified number of trajectories.
+        Simulates multiple trajectories of bankroll changes and collects statistics on the outcomes,
+        including counts of broke trajectories, sums of final bankrolls, minimum bankrolls, drawdowns, and the number of trajectories.
+        Returns:
+            dict: A dictionary containing the results of the Monte Carlo simulation, including:
+            - "broke_count": The number of trajectories that went broke.
+            - "sum_br": The sum of final bankrolls for surviving trajectories.
+            - "sum_min_br": The sum of minimum bankrolls for surviving trajectories.
+            - "sum_drawdown_survived": The sum of drawdowns for surviving trajectories.
+            - "max_drawdown": The maximum drawdown observed across all trajectories.
+            - "sum_drawdown": The sum of drawdowns across all trajectories.
+            - "final_survived": A list of final bankrolls for surviving trajectories.
+            - "nb_trajectorie": The total number of trajectories simulated.
+        """
+
+        broke_count = 0
+        sum_br = 0
+        sum_min_br = 0
+        max_drawdown = 0
+        sum_drawdown = 0
+        final_survived = []
+        sum_drawdown_survived = 0
+        for j in range(self.cfg["nb_trajectorie"]):
+            broke, br_temp, min_br, drawdown = self.simulate_trajectory()
+            if broke:
+                broke_count += 1
+            else:
+                sum_br += br_temp
+                sum_min_br += min_br
+                sum_drawdown_survived += drawdown
+                final_survived.append(br_temp)
+            if drawdown > max_drawdown:
+                max_drawdown = drawdown
+            sum_drawdown += drawdown
+        return {
+        "broke_count": broke_count,
+        "sum_br": sum_br,
+        "sum_min_br": sum_min_br,
+        "sum_drawdown_survived": sum_drawdown_survived,
+        "max_drawdown": max_drawdown,
+        "sum_drawdown": sum_drawdown,
+        "final_survived": final_survived,
+        "nb_trajectorie": self.cfg["nb_trajectorie"]
+        }
+
+def input_cfg() -> dict:
+    
+    """
+    Prompt the user for input values required for the Monte Carlo simulation and return them as a dictionary.
+    Returns:
+        dict: A dictionary containing the input values with keys "mu", "sigma", "ngame", "br_start", "nb_trajectorie", and "cost".
+    """
+    cfg = {}
+    cfg["mu"] = float(input("Enter mu :"))
+    cfg["sigma"] = float(input("Enter sigma :"))
+    cfg["ngame"] = int(input("Nb games :"))
+    cfg["br_start"] = float(input("Br start : "))
+    cfg["nb_trajectorie"] = int(input("nb trajectorie :"))
+    cfg["cost"] = float(input("cost : "))
+    cfg["seed"] = None
+    if cfg["nb_trajectorie"] <= 0:
+        print("Error, nb trajectorie must be > 0")
+        sys.exit(1)
+    if cfg["ngame"] <= 0:
+        print("Error, nb game must be > 0")
+        sys.exit(1)
+    if cfg["cost"] <= 0:
+        print("Error, cost must be > 0")
+        sys.exit(1)
+    return cfg
+
 def print_stats(stats):
 
     """Print the results of the Monte Carlo simulation. 
@@ -70,132 +197,14 @@ def print_histogram(values, bins=10):
         upper_bound = lower_bound + bin_size
         print(f"{lower_bound:.2f} - {upper_bound:.2f}: {'#' * histogram[i]} ({histogram[i]})")
 
-def inputval() -> tuple[float, float, int, float, int, float]:
-    
-    """
-    Prompt the user for input values required for the Monte Carlo simulation.
-    Returns:
-            tuple: A tuple containing the input values in the following order:
-            (mu, sigma, ngame, br_start, nb_trajectorie, cost)
-    """
-
-    valmu = (float)(input("Enter mu :")) 
-    valuesigma = (float)(input("Enter sigma :"))
-    ngame = (int)(input("Nb games :"))
-    br_start = (float)(input("Br start : "))
-    nb_trajectorie = (int)(input("nb trajectorie :"))
-    cost = (float)(input("cost : "))
-    if nb_trajectorie <= 0:
-        print("Error, nb trajectorie must be > 0")
-        sys.exit(1)
-    if ngame <= 0:
-        print("Error, nb game must be > 0")
-        sys.exit(1)
-    if cost <= 0:
-        print("Error, cost must be > 0")
-        sys.exit(1)
-    return valmu, valuesigma, ngame, br_start, nb_trajectorie, cost
-
-def simulate_trajectory(mu, sigma, ngame, br_start, cost) -> tuple[bool, float, float, float]:
-    
-    """
-    Simulate a single trajectory of bankroll changes over a specified number of games.
-    Args:
-        mu (float): The mean of the normal distribution for bankroll changes.
-        sigma (float): The standard deviation of the normal distribution for bankroll changes.
-        ngame (int): The number of games to simulate in the trajectory.
-        br_start (float): The starting bankroll for the trajectory.
-        cost (float): The cost threshold below which the bankroll is considered broke.
-    Returns:
-        tuple: A tuple containing the following values:
-        - broke (bool): Whether the bankroll went broke (True if it fell below the cost).
-        - final_br (float): The final bankroll at the end of the trajectory.
-        - min_br (float): The minimum bankroll observed during the trajectory.
-        - drawdown (float): The maximum drawdown observed during the trajectory.
-    """
-
-    br_temp = br_start
-    min_br = br_start
-    drawdown = 0
-    peak = br_start
-    broke = False
-    for i in range(ngame): 
-        br_temp += random.normalvariate(mu, sigma) 
-        if br_temp > peak: 
-            peak = br_temp
-        if peak - br_temp > drawdown:
-            drawdown = peak - br_temp
-        if br_temp < min_br: 
-            min_br = br_temp 
-        if br_temp < cost:
-            broke = True
-            break
-    return broke, br_temp, min_br, drawdown
-
-
-def run_monte_carlo(mu, sigma, ngame, br_start, cost, nb_trajectorie) -> dict:
-    
-    """
-    Run the Monte Carlo simulation for a specified number of trajectories.
-    Simulates multiple trajectories of bankroll changes and collects statistics on the outcomes,
-    including counts of broke trajectories, sums of final bankrolls, minimum bankrolls, drawdowns, and the number of trajectories.
-    Args:
-        mu (float): The mean of the normal distribution for bankroll changes.
-        sigma (float): The standard deviation of the normal distribution for bankroll changes.
-        ngame (int): The number of games to simulate in each trajectory.
-        br_start (float): The starting bankroll for each trajectory.
-        cost (float): The cost threshold below which the bankroll is considered broke.
-        nb_trajectorie (int): The number of trajectories to simulate.
-    Returns:
-        dict: A dictionary containing the results of the Monte Carlo simulation, including:
-        - "broke_count": The number of trajectories that went broke.
-        - "sum_br": The sum of final bankrolls for surviving trajectories.
-        - "sum_min_br": The sum of minimum bankrolls for surviving trajectories.
-        - "sum_drawdown_survived": The sum of drawdowns for surviving trajectories.
-        - "max_drawdown": The maximum drawdown observed across all trajectories.
-        - "nb_trajectorie": The total number of trajectories simulated.
-        - "sum_drawdown": The sum of drawdowns across all trajectories.
-        - "final_survived": A list of final bankrolls for surviving trajectories.
-    """
-
-    broke_count = 0
-    sum_br = 0
-    sum_min_br = 0
-    max_drawdown = 0
-    sum_drawdown = 0
-    final_survived = []
-    sum_drawdown_survived = 0
-    for j in range(nb_trajectorie):
-        broke, br_temp, min_br, drawdown = simulate_trajectory(mu, sigma, ngame, br_start, cost)
-        if broke:
-            broke_count += 1
-        else:
-            sum_br += br_temp
-            sum_min_br += min_br
-            sum_drawdown_survived += drawdown
-            final_survived.append(br_temp)
-        if drawdown > max_drawdown:
-            max_drawdown = drawdown
-        sum_drawdown += drawdown
-    return {
-    "broke_count": broke_count,
-    "sum_br": sum_br,
-    "sum_min_br": sum_min_br,
-    "sum_drawdown_survived": sum_drawdown_survived,
-    "max_drawdown": max_drawdown,
-    "nb_trajectorie": nb_trajectorie,
-    "sum_drawdown": sum_drawdown,
-    "final_survived": final_survived
-    }
-
 def main():
 
     """ Main function to execute the Monte Carlo simulation. 
     It prompts the user for input values, runs the simulation, and prints the results. 
     """
-    
-    mu, sigma, ngame, br_start, nb_trajectorie, cost = inputval()
-    stats = run_monte_carlo(mu, sigma, ngame, br_start, cost, nb_trajectorie)
+    config = input_cfg()
+    simulator = MonteCarloSimulator(config)
+    stats = simulator.run_monte_carlo()
     print_stats(stats)
 
 if __name__ == "__main__":
