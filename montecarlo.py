@@ -1,5 +1,5 @@
 import random
-import sys
+
 
 from dataclasses import dataclass
 
@@ -54,6 +54,23 @@ class MonteCarloSimulator:
                 break
         return (broke, br_temp, min_br, drawdown)
     
+    def simulate_grid(self) -> int:
+
+        n = self.rng.randint(1, 10000000)
+        prize = 0
+        for p in self.cfg.grid:
+            if p.totalgamemin <= n <= p.totalgamemax:
+                prize = p.prize
+                break
+        return prize - 1
+
+    def simulate_victory(self) -> bool:
+        n = self.rng.randint(1, 100)
+        if n <= self.cfg.cevpercent:
+            return True
+        else:
+            return False
+        
     def validate_cfg(self):
         
         """
@@ -124,7 +141,14 @@ class MonteCarloSimulator:
         }
 
 @dataclass
+class prizepool:
+    totalgamemin: int
+    totalgamemax: int
+    prize: int
+
+@dataclass
 class Infos:
+    cev : float
     mu: float
     sigma: float
     ngame: int
@@ -132,4 +156,7 @@ class Infos:
     nb_trajectorie: int
     cost: float
     seed: int | None = None
+    cevpercent : float = 0.0
+    grid: list[prizepool] = None
+
     

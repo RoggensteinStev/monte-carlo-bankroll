@@ -1,4 +1,4 @@
-from montecarlo import Infos
+from montecarlo import Infos, prizepool
 
 def input_cfg() -> Infos:
     
@@ -16,6 +16,7 @@ def input_cfg() -> Infos:
         Infos: An instance of the Infos dataclass containing the collected configuration parameters.
     """
     try:
+        cev = float(input("Enter the expected value (cev) of the game: "))
         mu = float(input("Enter the mean change in bankroll per game (mu): "))
         sigma = float(input("Enter the standard deviation of the change in bankroll per game (sigma): "))
         ngame = int(input("Enter the number of games to simulate in each trajectory (ngame): "))
@@ -24,9 +25,18 @@ def input_cfg() -> Infos:
         cost = float(input("Enter the cost threshold for going broke (cost): "))
         seed_input = input("Enter an optional seed for random number generation (or leave blank for no seed): ")
         seed = int(seed_input) if seed_input else None
-        return Infos(mu, sigma, ngame, br_start, nb_trajectorie, cost, seed)
+        grid = grid_import()
+        if cev < -500 or cev > 500:
+            raise ValueError("Cev must be between -500 and 500.")
+        cev_percent = round((cev + 500) / 1500 * 100, 2)
+        return Infos(cev, mu, sigma, ngame, br_start, nb_trajectorie, cost, seed, cev_percent, grid)
     except ValueError:
         raise ValueError("Invalid input. Please enter numeric values for all parameters.")
+
+def grid_import() -> list[prizepool]:
+    grid = [prizepool(1, 5938688, 2), prizepool(5938689, 8612896, 3), prizepool(8612897, 9437896, 5), prizepool(9437897, 9837896, 10), prizepool(9837897, 9997896, 50), prizepool(9997897, 9999896, 100), prizepool(9999897, 9999996, 1000), prizepool(9999997, 10000000, 100000)]
+    return grid
+
 
 def print_stats(stats):
 
