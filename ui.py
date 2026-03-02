@@ -5,20 +5,19 @@ def input_cfg() -> Infos:
     """
     Prompt the user for input values to configure the Monte Carlo simulation.
     The function collects the following parameters from the user:
-    - mu: The mean change in bankroll per game.
-    - sigma: The standard deviation of the change in bankroll per game.
-    - ngame: The number of games to simulate in each trajectory.
-    - br_start: The starting bankroll for each trajectory.
-    - nb_trajectorie: The number of trajectories to simulate.
-    - cost: The cost threshold for going broke.
-    - seed: An optional seed for random number generation to ensure reproducibility.
+    - cev: The expected value of the game, which should be between -500 and 500.
+    - ngame: The number of games to simulate in each trajectory, which must be greater than 0.
+    - br_start: The starting bankroll for each trajectory, which must be greater than 0
+    - nb_trajectorie: The number of trajectories to simulate, which must be greater than 0.
+    - cost: The cost threshold for going broke, which must be greater than 0.
+    - seed: An optional seed for random number generation, which can be left blank for no seed.
+    The function validates the input values and raises a ValueError if any of the parameters are invalid
     Returns:
         Infos: An instance of the Infos dataclass containing the collected configuration parameters.
     """
+
     try:
         cev = float(input("Enter the expected value (cev) of the game: "))
-        mu = float(input("Enter the mean change in bankroll per game (mu): "))
-        sigma = float(input("Enter the standard deviation of the change in bankroll per game (sigma): "))
         ngame = int(input("Enter the number of games to simulate in each trajectory (ngame): "))
         br_start = float(input("Enter the starting bankroll for each trajectory (br_start): "))
         nb_trajectorie = int(input("Enter the number of trajectories to simulate (nb_trajectorie): "))
@@ -29,18 +28,27 @@ def input_cfg() -> Infos:
         if cev < -500 or cev > 500:
             raise ValueError("Cev must be between -500 and 500.")
         cev_percent = round((cev + 500) / 1500 * 100, 2)
-        return Infos(cev, mu, sigma, ngame, br_start, nb_trajectorie, cost, seed, cev_percent, grid)
+        return Infos(cev, ngame, br_start, nb_trajectorie, cost, seed, cev_percent, grid)
     except ValueError:
         raise ValueError("Invalid input. Please enter numeric values for all parameters.")
 
 def grid_import() -> list[prizepool]:
+    
+    """
+    Import the prize pool grid for the simulation.
+    This function defines a grid of prize pools based on predefined ranges of random numbers.
+    Returns:
+        list[prizepool]: A list of prizepool instances representing the prize distribution for the simulation.
+    """
+
     grid = [prizepool(1, 5938688, 2), prizepool(5938689, 8612896, 3), prizepool(8612897, 9437896, 5), prizepool(9437897, 9837896, 10), prizepool(9837897, 9997896, 50), prizepool(9997897, 9999896, 100), prizepool(9999897, 9999996, 1000), prizepool(9999997, 10000000, 100000)]
     return grid
 
 
 def print_stats(stats):
 
-    """Print the results of the Monte Carlo simulation. 
+    """
+    Print the results of the Monte Carlo simulation. 
     Calculates and displays the average drawdown, average bankroll for survivors, 
     and other relevant statistics. 
     Args: stats (dict): A dictionary containing the results of the Monte Carlo simulation, 

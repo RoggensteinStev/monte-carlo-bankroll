@@ -6,6 +6,7 @@ def main():
     """ Main function to execute the Monte Carlo simulation. 
     It prompts the user for input values, runs the simulation, and prints the results. 
     """
+    
     try:
         cfg = input_cfg()
         simulator = MonteCarloSimulator(cfg)

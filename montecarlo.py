@@ -42,7 +42,7 @@ class MonteCarloSimulator:
         peak = self.cfg.br_start
         broke = False
         for i in range(self.cfg.ngame): 
-            br_temp += self.rng.normalvariate(self.cfg.mu, self.cfg.sigma) 
+            br_temp += self.simulate_result() 
             if br_temp > peak: 
                 peak = br_temp
             if peak - br_temp > drawdown:
@@ -54,17 +54,47 @@ class MonteCarloSimulator:
                 break
         return (broke, br_temp, min_br, drawdown)
     
+    def simulate_result(self) -> int:
+        
+        """
+        Simulate the result of a single game based on the expected value percentage (cevpercent) and the prize pool grid.
+        This method determines whether the outcome is a victory or a loss and calculates the resulting bankroll change accordingly.
+        Returns:
+            int: The change in bankroll based on the simulated game outcome. Positive for victories, negative for losses.
+        """
+
+        if self.simulate_victory():
+            return self.simulate_grid()
+        else:
+            return -1
+
     def simulate_grid(self) -> int:
+       
+        """
+        Simulate a grid outcome based on the defined prize pool and return the prize amount.
+        The method generates a random number and checks it against the defined prize pool to determine the prize
+        amount. The prize is calculated as the prize value from the grid minus 1.
+        Returns:
+            int: The prize amount based on the simulated grid outcome.
+        """
 
         n = self.rng.randint(1, 10000000)
-        prize = 0
+        prize = None
         for p in self.cfg.grid:
             if p.totalgamemin <= n <= p.totalgamemax:
                 prize = p.prize
                 break
+        if prize is None:
+            raise ValueError("grid coverage error")
         return prize - 1
 
     def simulate_victory(self) -> bool:
+        
+        """Simulate a victory based on the expected value percentage (cevpercent) provided in the configuration.
+        Returns:
+            bool: True if the simulated outcome is a victory, False otherwise.
+        """
+
         n = self.rng.randint(1, 100)
         if n <= self.cfg.cevpercent:
             return True
@@ -79,8 +109,10 @@ class MonteCarloSimulator:
         found. If any parameter is invalid, the program will exit with an error message.
         """
 
-        if self.cfg.sigma < 0:
-            raise ValueError("Sigma must be non-negative.")
+        if not self.cfg.grid: 
+            raise ValueError("Grid is missing/empty")
+        if not (0 <= self.cfg.cevpercent <= 100):
+            raise ValueError("Expected value percentage (cevpercent) must be between 0 and 100.")
         if self.cfg.ngame <= 0:
             raise ValueError("Number of games (ngame) must be greater than 0.")
         if self.cfg.br_start <= 0:
@@ -109,6 +141,7 @@ class MonteCarloSimulator:
             - "final_survived": A list of final bankrolls for surviving trajectories.
             - "nb_trajectorie": The total number of trajectories simulated.
         """
+
         self.validate_cfg()
         broke_count = 0
         sum_br = 0
@@ -149,8 +182,6 @@ class prizepool:
 @dataclass
 class Infos:
     cev : float
-    mu: float
-    sigma: float
     ngame: int
     br_start: float
     nb_trajectorie: int
@@ -158,5 +189,3 @@ class Infos:
     seed: int | None = None
     cevpercent : float = 0.0
     grid: list[prizepool] = None
-
-    
