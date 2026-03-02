@@ -59,6 +59,7 @@ def print_stats(stats):
     avg_drawdown_all = stats["sum_drawdown"] / stats["nb_trajectorie"]
     survivors = stats["nb_trajectorie"] - stats["broke_count"]
     avg_brok_percent = stats["broke_count"] / stats["nb_trajectorie"] * 100
+    labels = [0, 5, 30, 50, 70, 95, 100]
     if survivors > 0:
         avg_br_survived = stats["sum_br"] / survivors
         avg_min_br_survived = stats["sum_min_br"] / survivors
@@ -78,6 +79,10 @@ def print_stats(stats):
         print("avg br :", f"{avg_br_survived:.2f}")
     print("survivors :", survivors)
     print_histogram(stats["final_survived"])
+    print("Percentiles of final bankrolls for survivors:")
+    if stats["percentiles"] is not None:
+        for label, value in zip(labels, stats["percentiles"]):
+            print(f"{label}th percentile: {value:.2f}")
     print("************************************************")
 
 def print_histogram(values, bins=10):

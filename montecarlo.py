@@ -149,6 +149,7 @@ class MonteCarloSimulator:
         max_drawdown = 0
         sum_drawdown = 0
         final_survived = []
+        percentiles = None
         sum_drawdown_survived = 0
         for j in range(self.cfg.nb_trajectorie):
             broke, br_temp, min_br, drawdown = self.simulate_trajectory()
@@ -162,6 +163,8 @@ class MonteCarloSimulator:
             if drawdown > max_drawdown:
                 max_drawdown = drawdown
             sum_drawdown += drawdown
+        if final_survived:
+            percentiles = self.percentiles(final_survived)
         return {
         "broke_count": broke_count,
         "sum_br": sum_br,
@@ -170,8 +173,35 @@ class MonteCarloSimulator:
         "max_drawdown": max_drawdown,
         "sum_drawdown": sum_drawdown,
         "final_survived": final_survived,
-        "nb_trajectorie": self.cfg.nb_trajectorie
+        "nb_trajectorie": self.cfg.nb_trajectorie,
+        "percentiles": percentiles
         }
+
+def percentiles(values) -> list[float]:
+
+    """
+    Calculate specific percentiles from a list of values.
+    This function calculates the 0th, 5th, 30th, 50th, 70th, 95th, and 100th percentiles from a list of values.
+    Args:
+        values (list): A list of numeric values from which to calculate the percentiles.
+    Returns:
+        list[float]: A list containing the calculated percentiles in the following order: [0th, 5th, 30th, 50th, 70th, 95th, 100th].
+    Raises:
+        ValueError: If the input list is empty, a ValueError is raised indicating that percentile calculation cannot be performed on an empty list.
+    """
+
+    if not values:
+        raise ValueError("Empty values list for percentile calculation")
+    sorted_values = sorted(values)
+    n = len(sorted_values)
+    p0 = sorted_values[0]
+    p5 = sorted_values[int(0.05 * (n - 1))]
+    p30 = sorted_values[int(0.30 * (n - 1))]
+    p50 = sorted_values[int(0.5 * (n - 1))]
+    p70 = sorted_values[int(0.70 * (n - 1))]
+    p95 = sorted_values[int(0.95 * (n - 1))]
+    p100 = sorted_values[-1]
+    return [p0, p5, p30, p50, p70, p95, p100]
 
 @dataclass
 class prizepool:
