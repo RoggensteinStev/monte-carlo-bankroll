@@ -1,19 +1,19 @@
 from montecarlo import Infos, prizepool
+import matplotlib.pyplot as plt
 
-def input_cfg() -> Infos:
+def input_cfg() -> Infos: 
     
     """
     Prompt the user for input values to configure the Monte Carlo simulation.
-    The function collects the following parameters from the user:
-    - cev: The expected value of the game, which should be between -500 and 500.
-    - ngame: The number of games to simulate in each trajectory, which must be greater than 0.
-    - br_start: The starting bankroll for each trajectory, which must be greater than 0
-    - nb_trajectorie: The number of trajectories to simulate, which must be greater than 0.
-    - cost: The cost threshold for going broke, which must be greater than 0.
-    - seed: An optional seed for random number generation, which can be left blank for no seed.
-    The function validates the input values and raises a ValueError if any of the parameters are invalid
+    This function collects various parameters from the user, 
+    including the expected value of the game (cev),
+    the number of games to simulate, the starting bankroll, 
+    the number of trajectories, the cost threshold for going broke, 
+    and an optional seed for random number generation.
     Returns:
-        Infos: An instance of the Infos dataclass containing the collected configuration parameters.
+        Infos: An instance of the Infos dataclass containing the collected configuration parameters for the simulation.
+    Raises:
+        ValueError: If any of the input values are invalid (e.g., non-numeric values, cev out of range).
     """
 
     try:
@@ -24,21 +24,39 @@ def input_cfg() -> Infos:
         cost = float(input("Enter the cost threshold for going broke (cost): "))
         seed_input = input("Enter an optional seed for random number generation (or leave blank for no seed): ")
         seed = int(seed_input) if seed_input else None
-        grid = grid_import()
-        if cev < -500 or cev > 500:
-            raise ValueError("Cev must be between -500 and 500.")
-        cev_percent = round((cev + 500) / 1500 * 100, 2)
-        return Infos(cev, ngame, br_start, nb_trajectorie, cost, seed, cev_percent, grid)
     except ValueError:
         raise ValueError("Invalid input. Please enter numeric values for all parameters.")
+    if cev < -500 or cev > 500:
+            raise ValueError("Cev must be between -500 and 500.")
+    grid = grid_import()
+    cev_percent = round((cev + 500) / 1500 * 100, 2)
+    return Infos(cev_percent, ngame, br_start, nb_trajectorie, cost, seed, grid)
+
+def plot_histogram(data: list[float], bins=10) -> None:
+    
+    """Plot a histogram of the final bankrolls for the surviving trajectories using matplotlib.
+    Args:
+        data (list): A list of final bankrolls for the surviving trajectories.
+        bins (int, optional): The number of bins to use in the
+        histogram. Defaults to 10.
+    """
+    if not data:
+        print("No survivors to display.")
+        return
+    plt.hist(data, bins=bins, edgecolor='black')
+    plt.title('Histogram of Final Bankrolls for Survivors')
+    plt.xlabel('Final Bankroll')
+    plt.ylabel('Frequency')
+    plt.grid(axis='y', alpha=0.75)
+    plt.show()
 
 def grid_import() -> list[prizepool]:
     
     """
-    Import the prize pool grid for the simulation.
-    This function defines a grid of prize pools based on predefined ranges of random numbers.
+    Import the prize pool grid for the Monte Carlo simulation.
+    This function creates and returns a list of prizepool instances representing the different prize levels based on predefined thresholds.
     Returns:
-        list[prizepool]: A list of prizepool instances representing the prize distribution for the simulation.
+        list[prizepool]: A list of prizepool instances representing the prize levels for the simulation.
     """
 
     grid = [prizepool(1, 5938688, 2), prizepool(5938689, 8612896, 3), prizepool(8612897, 9437896, 5), prizepool(9437897, 9837896, 10), prizepool(9837897, 9997896, 50), prizepool(9997897, 9999896, 100), prizepool(9999897, 9999996, 1000), prizepool(9999997, 10000000, 100000)]
@@ -48,12 +66,21 @@ def grid_import() -> list[prizepool]:
 def print_stats(stats):
 
     """
-    Print the results of the Monte Carlo simulation. 
-    Calculates and displays the average drawdown, average bankroll for survivors, 
-    and other relevant statistics. 
-    Args: stats (dict): A dictionary containing the results of the Monte Carlo simulation, 
-    including counts of broke trajectories, sums of final bankrolls, 
-    minimum bankrolls, drawdowns, and the number of trajectories. 
+    Print the statistics of the Monte Carlo simulation results, including the percentage of trajectories that went broke,
+the average drawdown, the average final bankroll for survivors, and a histogram of the final bankrolls for survivors.
+    Args:
+    stats (dict): A dictionary containing the statistics of the Monte Carlo simulation results, including:
+        - broke_count: The number of trajectories that went broke.
+        - sum_br: The sum of final bankrolls for all trajectories.
+        - max_drawdown: The maximum drawdown observed across all trajectories.
+        - sum_drawdown: The sum of drawdowns across all trajectories.
+        - final_survived: A list of final bankrolls for the surviving trajectories.
+        - nb_trajectorie: The total number of trajectories simulated.
+        - percentiles: A list of percentiles for the final bankrolls of survivors (if available).
+    Raises:
+        ValueError: If the stats dictionary is missing required keys or contains invalid values.
+    Note: The function calculates and prints various statistics based on the input stats dictionary, including the percentage of broke trajectories
+    and the average drawdown. It also generates a histogram of the final bankrolls for survivors and prints percentiles if available.
     """
 
     avg_drawdown_all = stats["sum_drawdown"] / stats["nb_trajectorie"]
@@ -79,11 +106,12 @@ def print_stats(stats):
         print("avg br :", f"{avg_br_survived:.2f}")
     print("survivors :", survivors)
     print_histogram(stats["final_survived"])
-    print("Percentiles of final bankrolls for survivors:")
     if stats["percentiles"] is not None:
+        print("Percentiles of final bankrolls for survivors:")
         for label, value in zip(labels, stats["percentiles"]):
             print(f"{label}th percentile: {value:.2f}")
     print("************************************************")
+    plot_histogram(stats["final_survived"])
 
 def print_histogram(values, bins=10):
     

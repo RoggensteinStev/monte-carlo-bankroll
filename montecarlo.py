@@ -90,13 +90,14 @@ class MonteCarloSimulator:
 
     def simulate_victory(self) -> bool:
         
-        """Simulate a victory based on the expected value percentage (cevpercent) provided in the configuration.
+        """
+        Simulate a victory based on the expected value percentage (cevpercent) provided in the configuration.
         Returns:
             bool: True if the simulated outcome is a victory, False otherwise.
         """
 
-        n = self.rng.randint(1, 100)
-        if n <= self.cfg.cevpercent:
+        n = self.rng.randint(1, 10000)
+        if n <= self.cfg.cevpercent * 100:
             return True
         else:
             return False
@@ -127,19 +128,22 @@ class MonteCarloSimulator:
     def run_monte_carlo(self) -> dict:
         
         """
-        Run the Monte Carlo simulation for a specified number of trajectories.
-        Simulates multiple trajectories of bankroll changes and collects statistics on the outcomes,
-        including counts of broke trajectories, sums of final bankrolls, minimum bankrolls, drawdowns, and the number of trajectories.
+        Run the Monte Carlo simulation for a specified number of trajectories and collect statistics on the outcomes.
+        This method simulates multiple trajectories of bankroll changes, counts how many went broke, sums the
+        final bankrolls of survivors, calculates drawdowns, and collects final bankrolls for survivors. It returns a
+        dictionary containing all the collected statistics, including the percentage of trajectories that went broke, 
+        average drawdown, and percentiles of final bankrolls for survivors.
         Returns:
-            dict: A dictionary containing the results of the Monte Carlo simulation, including:
-            - "broke_count": The number of trajectories that went broke.
-            - "sum_br": The sum of final bankrolls for surviving trajectories.
-            - "sum_min_br": The sum of minimum bankrolls for surviving trajectories.
-            - "sum_drawdown_survived": The sum of drawdowns for surviving trajectories.
-            - "max_drawdown": The maximum drawdown observed across all trajectories.
-            - "sum_drawdown": The sum of drawdowns across all trajectories.
-            - "final_survived": A list of final bankrolls for surviving trajectories.
-            - "nb_trajectorie": The total number of trajectories simulated.
+            dict: A dictionary containing the statistics of the Monte Carlo simulation results, including:
+            - broke_count (int): The number of trajectories that went broke.
+            - sum_br (float): The sum of final bankrolls for all surviving trajectories.
+            - sum_min_br (float): The sum of minimum bankrolls observed across all trajectories.
+            - sum_drawdown_survived (float): The sum of drawdowns for surviving trajectories.
+            - max_drawdown (float): The maximum drawdown observed across all trajectories.
+            - sum_drawdown (float): The total sum of drawdowns across all trajectories.
+            - final_survived (list): A list of final bankrolls for the surviving trajectories.
+            - nb_trajectorie (int): The total number of trajectories simulated.
+            - percentiles (list or None): A list of percentiles for the final bankrolls of survivors, or None if there are no survivors.
         """
 
         self.validate_cfg()
@@ -177,31 +181,31 @@ class MonteCarloSimulator:
         "percentiles": percentiles
         }
 
-def percentiles(values) -> list[float]:
+    def percentiles(self, values) -> list[float]:
 
-    """
-    Calculate specific percentiles from a list of values.
-    This function calculates the 0th, 5th, 30th, 50th, 70th, 95th, and 100th percentiles from a list of values.
-    Args:
-        values (list): A list of numeric values from which to calculate the percentiles.
-    Returns:
-        list[float]: A list containing the calculated percentiles in the following order: [0th, 5th, 30th, 50th, 70th, 95th, 100th].
-    Raises:
-        ValueError: If the input list is empty, a ValueError is raised indicating that percentile calculation cannot be performed on an empty list.
-    """
+        """
+        Calculate specific percentiles from a list of values.
+        This function calculates the 0th, 5th, 30th, 50th, 70th, 95th, and 100th percentiles from a list of values.
+        Args:
+            values (list): A list of numeric values from which to calculate the percentiles.
+        Returns:
+            list[float]: A list containing the calculated percentiles in the following order: [0th, 5th, 30th, 50th, 70th, 95th, 100th].
+        Raises:
+            ValueError: If the input list is empty, a ValueError is raised indicating that percentile calculation cannot be performed on an empty list.
+        """
 
-    if not values:
-        raise ValueError("Empty values list for percentile calculation")
-    sorted_values = sorted(values)
-    n = len(sorted_values)
-    p0 = sorted_values[0]
-    p5 = sorted_values[int(0.05 * (n - 1))]
-    p30 = sorted_values[int(0.30 * (n - 1))]
-    p50 = sorted_values[int(0.5 * (n - 1))]
-    p70 = sorted_values[int(0.70 * (n - 1))]
-    p95 = sorted_values[int(0.95 * (n - 1))]
-    p100 = sorted_values[-1]
-    return [p0, p5, p30, p50, p70, p95, p100]
+        if not values:
+            raise ValueError("Empty values list for percentile calculation")
+        sorted_values = sorted(values)
+        n = len(sorted_values)
+        p0 = sorted_values[0]
+        p5 = sorted_values[int(0.05 * (n - 1))]
+        p30 = sorted_values[int(0.30 * (n - 1))]
+        p50 = sorted_values[int(0.5 * (n - 1))]
+        p70 = sorted_values[int(0.70 * (n - 1))]
+        p95 = sorted_values[int(0.95 * (n - 1))]
+        p100 = sorted_values[-1]
+        return [p0, p5, p30, p50, p70, p95, p100]
 
 @dataclass
 class prizepool:
